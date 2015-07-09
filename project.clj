@@ -8,6 +8,7 @@
                  [org.clojure/clojurescript "0.0-3308"]]
   :plugins [[lein-cljsbuild "1.0.6"]]
   :clean-targets ["out" "out-adv"]
+  :source-paths ["src"]
   :cljsbuild {:builds [{:id "dev"
                         :source-paths ["src"]
                         :compiler {:main "maye.core"
