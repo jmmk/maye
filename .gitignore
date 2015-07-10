@@ -3,3 +3,5 @@
 /target/
 /pom.xml
 /benchmarks.cljs
+/.lein-repl-history
+/scripts/
