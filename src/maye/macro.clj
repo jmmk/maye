@@ -1,7 +1,7 @@
 (ns maye.macro
   (:require [clojure.string :as string]))
 
-(defmacro defcomponent [name fields]
+(defmacro defcomponent
   "Defining a component using the syntax:
   (defcomponent position [x y])
 
@@ -11,7 +11,7 @@
   And a helper function to create a new record:
   (defn position [x y]
     (Position. :position x y))"
-
+  [name fields]
   (let [capital-name (symbol (string/capitalize name))
         record-constructor (symbol (str capital-name "."))
         lowercase-name (symbol (string/lower-case name))

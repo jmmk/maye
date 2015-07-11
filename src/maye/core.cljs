@@ -6,10 +6,10 @@
             :entities {}
             :frame-count 0})
 
-(defn frame-period [period]
+(defn frame-period
   "Returns a :run-when predicate for running systems on a given frame-period"
-
-  (fn [world] (= (mod (:frame-count world) period) 0)))
+  [period]
+  (fn [world] (zero? (mod (:frame-count world) period))))
 
 (defn assoc-components [entity components]
   (reduce #(assoc %1 (:name %2) %2) entity components))
@@ -57,9 +57,9 @@
 (defn frame-counter [world]
   (update world :frame-count inc))
 
-(defn call-systems [world]
+(defn call-systems
   "Calls each of the registered systems in priority order"
-
+  [world]
   (reduce (fn [world system]
             (let [entities (vals (:entities world))
                   {:keys [matcher-fn update-fn run-when]} system]
