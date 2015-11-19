@@ -5,3 +5,6 @@
 /benchmarks.cljs
 /.lein-repl-history
 /scripts/
+*.iml
+/.idea
+/figwheel_server.log

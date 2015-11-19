@@ -1,75 +1,114 @@
 (ns maye.core
-  (:require [tailrecursion.priority-map :as pm]))
+  (:require [tailrecursion.priority-map :as pm]
+            [maye.util :as util]))
 
-(def world {:paused? false
-            :systems (pm/priority-map)
-            :entities {}
-            :frame-count 0})
 
-(defn frame-period
-  "Returns a :run-when predicate for running systems on a given frame-period"
-  [period]
-  (fn [world] (zero? (mod (:frame-count world) period))))
+;;----------Entities--------------
 
 (defn assoc-components [entity components]
   (reduce #(assoc %1 (:name %2) %2) entity components))
 
-(defn system [& {:keys [id name update-fn matcher-fn run-when entities]}]
-  {:id (or id (random-uuid))
-   :name name
-   :update-fn (or update-fn identity)
-   :matcher-fn (or matcher-fn (constantly true))
-   :run-when (or run-when (constantly true))})
-
-(defn entity
-  ([] (entity []))
+(defn new-entity
+  ([] (new-entity []))
   ([components] (assoc-components {:id (random-uuid)} components)))
 
-(defn has-components? [entity components]
+(defn contains-components? [entity components]
   (every? #(contains? entity %) components))
-
-(defn get-component [entity component]
-  (get entity component))
 
 (defn assoc-component [entity component]
   (assoc entity (:name component) component))
 
-(defn remove-component [entity component]
+(defn dissoc-component [entity component]
   (dissoc entity (:name component)))
 
-(defn remove-components [entity components]
+(defn dissoc-components [entity components]
   (reduce #(dissoc %1 (:name %2)) entity components))
 
-(defn get-entity [world id]
-  (get-in world [:entities id]))
 
-(defn assoc-entity [world entity]
-  (update world :entities #(assoc % (:id entity) entity)))
+;;------------Systems--------------
 
-(defn add-systems [world systems]
-  (update world :systems #(reduce (fn [current [system priority]]
-                                    (assoc current system priority)) % systems)))
+(defn update-entities
+  "Return updated entities to be assoc'd into the game state"
+  [entities]
+  entities)
 
-(defn assoc-entities [world entities]
-  (update world :entities (fn [current]
-                            (reduce #(assoc %1 (:id %2) %2) current entities))))
+(defn add-entity-to-system
+  "Return updated system with any new entity ids conj'd"
+  [system entity]
+  (update system :entities conj (:id entity)))
 
-(defn frame-counter [world]
-  (update world :frame-count inc))
+(defn new-system
+  "Create a new System with given name and options"
+  [name & {:keys [id update-fn update-filter add-entity entity-filter entity-ids]}]
+  {:name          name
+   :id            (or id (random-uuid))
+   :update-fn     (or update-fn update-entities)
+   :update-filter (or update-filter (constantly true))
+   :add-entity    (or add-entity add-entity-to-system)
+   :entity-filter (or entity-filter (constantly true))
+   :entity-ids    (set (or entity-ids []))})
 
-(defn call-systems
-  "Calls each of the registered systems in priority order"
-  [world]
-  (reduce (fn [world system]
-            (let [entities (vals (:entities world))
-                  {:keys [matcher-fn update-fn run-when]} system]
-              (if (run-when world)
-                (update-fn world (filter matcher-fn entities))
-                world)))
-          world
-          (keys (:systems world))))
 
-(defn update-world [world]
-  (-> world
-      (frame-counter)
-      (call-systems)))
+;;-----------Game State--------------
+
+(def priority-map (pm/priority-map-by
+                    #(compare (:priority %1)
+                              (:priority %2))))
+
+(defn new-state [& {:keys [frame entities systems]}]
+  {:paused?  false
+   :systems  (or systems priority-map)
+   :entities (or entities {})
+   :frame    (or frame 0)})
+
+(defn inc-frame [state]
+  (update state :frame inc))
+
+(defn update-systems
+  "Call each of the registered systems in priority order
+  and assoc the returned entities into the state"
+  [state]
+  (reduce (fn [{:keys [entities] :as state} system]
+            (let [{:keys [update-fn run-when-fn entity-ids]} system]
+              (if (run-when-fn state)
+                (update state :entities merge (update-fn (select-keys entities entity-ids)))
+                state)))
+          state
+          (:systems state)))
+
+(defn update-state
+  "Move the gamestate forward one frame by calling all systems"
+  [state]
+  (-> state
+      inc-frame
+      update-systems))
+
+(defn get-entity [state id]
+  (get-in state [:entities id]))
+
+(defn add-entities-to-systems
+  "Call add-entity for each matching entity for each system"
+  [{:keys [systems]} entities]
+  (for [system systems]
+    (let [{:keys [entity-filter add-entity]} system
+          entities-to-add (filter entity-filter entities)]
+      (reduce add-entity system entities-to-add))))
+
+(defn add-systems
+  "Assoc systems into the state
+  and add any entities from the state into the systems"
+  [state systems]
+  (as-> state current
+        (util/assoc-coll-by-id current :systems systems)
+        (util/assoc-coll-by-id current :systems (add-entities-to-systems current (:entities current)))))
+
+(defn add-entity [state entity]
+  "Assoc entity into state and add it to any matching systems"
+  (as-> state current
+        (util/assoc-by-id current :entities entity)
+        (util/assoc-coll-by-id current :systems (add-entities-to-systems current [entity]))))
+
+(defn add-entities [state entities]
+  (as-> state current
+        (util/assoc-coll-by-id current :entities entities)
+        (util/assoc-coll-by-id current :systems (add-entities-to-systems current entities))))
