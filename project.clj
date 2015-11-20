@@ -1,4 +1,4 @@
-(defproject maye "0.1.0-SNAPSHOT"
+(defproject maye "0.2.0-SNAPSHOT"
   :description "Minimal ECS for ClojureScript"
   :url "https://www.github.com/jmmk/maye"
   :license {:name "MIT License"
