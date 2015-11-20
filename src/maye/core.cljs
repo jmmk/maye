@@ -29,7 +29,7 @@
 
 (defn update-entities
   "Return updated entities to be assoc'd into the game state"
-  [entities]
+  [system entities]
   entities)
 
 (defn add-entity-to-system
@@ -71,7 +71,7 @@
   (reduce (fn [{:keys [entities] :as state} system]
             (let [{:keys [update-fn run-when-fn entity-ids]} system]
               (if (run-when-fn state)
-                (update state :entities merge (update-fn (select-keys entities entity-ids)))
+                (update state :entities merge (update-fn system (select-keys entities entity-ids)))
                 state)))
           state
           (:systems state)))
