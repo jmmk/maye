@@ -1,10 +1,7 @@
-(ns maye.util)
+(ns maye.util
+  (:require [schema.core :as s :include-macros true]
+            [maye.core :as core]))
 
-(defn frame-period
-  "Returns an :update-filter predicate for running systems
-  on a given frame-period"
-  [period]
-  (fn [world] (zero? (mod (:frame world) period))))
 
 (defn assoc-by-id [state key item]
   (update state key assoc (:id item) item))
