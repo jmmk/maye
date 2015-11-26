@@ -5,4 +5,3 @@
 
 (defn new-component [props]
   (map->Component props))
-
