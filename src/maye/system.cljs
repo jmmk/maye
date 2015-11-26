@@ -31,7 +31,7 @@
   Return updated system with any new entity ids conj'd"
   [system :- System
    entity :- Entity]
-  (update system :entities (fnil conj #{}) (:id entity)))
+  (update system :entity-ids (fnil conj #{}) (:id entity)))
 
 (declare validate-system)
 
@@ -89,5 +89,3 @@
   (map validate-entity-filter entity-filters)
   (map validate-add-entity add-entity)
   (s/validate System system))
-
-

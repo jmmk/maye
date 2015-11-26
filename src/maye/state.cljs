@@ -41,7 +41,7 @@
   [{:keys [systems] :as state} entities]
   (for [system (vals systems)]
     (let [{:keys [entity-filters add-entity]} system
-          entities-to-add (filter (apply every-pred entity-filters) entities)]
+          entities-to-add (filter (apply some-fn entity-filters) entities)]
       (reduce add-entity system entities-to-add))))
 
 (defn add-systems
