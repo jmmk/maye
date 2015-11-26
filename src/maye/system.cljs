@@ -4,7 +4,7 @@
             [maye.entity :as entity :refer [Entity]]))
 
 (s/defrecord System [id :- s/Uuid
-                     name :- s/Str
+                     name :- s/Keyword
                      update-fn :- (s/=>* [Entity] [State [Entity]])
                      update-filters :- [(s/=>* s/Bool [State])]
                      add-entity :- (s/=>* System [System Entity])
@@ -34,6 +34,7 @@
   (update system :entities (fnil conj #{}) (:id entity)))
 
 (declare validate-system)
+
 (defn new-system
   "Create a new System with given name and options"
   [& {:keys [name id update-fn update-filters add-entity entity-filters entity-ids]}]
@@ -51,7 +52,6 @@
 
 (def test-entity (entity/new-entity))
 (def test-state (state/new-state))
-(def test-system (new-system))
 
 (defn validate-update-fn
   "Ensure update-fn is of type:
@@ -79,7 +79,7 @@
   System -> Entity -> System"
   [add-entity]
   (s/with-fn-validation
-    (add-entity test-system test-entity)))
+    (add-entity (new-system) test-entity)))
 
 (defn validate-system
   [{:keys [update-fn update-filters add-entity entity-filters]
