@@ -52,27 +52,28 @@
                                    (assoc system :priority priority))
                                  systems)]
     (as-> state current
-          (util/assoc-coll-by-id current :systems prioritized-systems)
-          (util/assoc-coll-by-id current :systems (add-entities-to-systems current (vals (:entities current)))))))
+          (util/assoc-coll-by-id current :systems prioritized-systems))))
+          ;(util/assoc-coll-by-id current :systems (add-entities-to-systems current (vals (:entities current)))))))
 
 (defn add-entity [state entity]
   "Assoc entity into state and add it to any matching systems"
   (as-> state current
-        (util/assoc-by-id current :entities entity)
-        (util/assoc-coll-by-id current :systems (add-entities-to-systems current [entity]))))
+        (util/assoc-by-id current :entities entity)))
+        ;(util/assoc-coll-by-id current :systems (add-entities-to-systems current [entity]))))
 
 (defn add-entities [state entities]
   (as-> state current
-        (util/assoc-coll-by-id current :entities entities)
-        (util/assoc-coll-by-id current :systems (add-entities-to-systems current entities))))
+        (util/assoc-coll-by-id current :entities entities)))
+        ;(util/assoc-coll-by-id current :systems (add-entities-to-systems current entities))))
 
 (defn update-systems
   "Call each of the registered systems in priority order
   and assoc the returned entities into the state"
   [{:keys [systems] :as state}]
   (reduce (fn [{:keys [entities] :as state} system]
-            (let [{:keys [update-fn update-filters entity-ids]} system
-                  valid-entities (vals (select-keys entities entity-ids))]
+            (let [{:keys [update-fn entity-filters update-filters entity-ids]} system
+                  valid-entities (filter (apply some-fn entity-filters) (vals entities))]
+                  ;valid-entities (vals (select-keys entities entity-ids))]
               (if ((apply every-pred update-filters) state)
                 (util/assoc-coll-by-id state :entities (update-fn state valid-entities))
                 state)))
